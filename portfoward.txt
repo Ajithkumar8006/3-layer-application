@@ -1,0 +1,29 @@
+kubectl port-forward --address 0.0.0.0 svc/frontend-service 30080:80
+kubectl port-forward --address 0.0.0.0 svc/backend-service 3002:3002
+kubectl port-forward --address 0.0.0.0 svc/mongodb-service 27017:27017
+ajith@PowerEdge-T20:~$ mongosh "mongodb://192.168.1.254:27017"
+
+Backend data check
+http://192.168.1.254:3002/api/persons
+
+Frontend url
+http://192.168.1.254:30080/
+
+ 1615  docker build -t 192.168.1.254:5002/person-frontend:v100.0 .
+ 1616  docker push 192.168.1.254:5002/person-frontend:v100.0
+ 1617  kubectl set image deployment/frontend web=192.168.1.254:5002/person-frontend:v100.0
+ 1618  cd ../backend/
+ 1619  docker build -t 192.168.1.254:5002/person-backend:v100.0 .
+ 1620  docker push 192.168.1.254:5002/person-backend:v100.0
+ 1621  kubectl set image deployment/backend api=192.168.1.254:5002/person-backend:v100.0
+
+env:
+- name: MONGO_URI
+  value: "mongodb://192.168.1.254:27017/persondb"
+
+
+kubectl rollout restart deployment backend
+
+
+test> use persondb;
+persondb> db.people.find().pretty();

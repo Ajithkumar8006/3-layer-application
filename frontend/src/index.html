@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Analytics Dashboard</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary: #00f5c4;
+    --secondary: #7b2fff;
+    --accent: #ff3cac;
+    --bg: #060612;
+    --surface: #0d0d1f;
+    --surface2: #12122a;
+    --border: rgba(123, 47, 255, 0.25);
+    --text: #e8e8f8;
+    --muted: #5a5a8a;
+    --glow-primary: rgba(0, 245, 196, 0.15);
+    --glow-secondary: rgba(123, 47, 255, 0.2);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(123,47,255,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(0,245,196,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255,60,172,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+}
+
+.wrapper { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 40px 32px; }
+
+/* Header */
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 48px; animation: fadeDown 0.6s ease both; }
+.logo-group { display: flex; align-items: center; gap: 14px; }
+.logo-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 0 24px var(--glow-secondary); }
+h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+h1 span { color: var(--primary); }
+.status-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; color: var(--primary); background: rgba(0,245,196,0.08); border: 1px solid rgba(0,245,196,0.25); padding: 6px 14px; border-radius: 100px; display: flex; align-items: center; gap: 7px; letter-spacing: 0.5px; }
+.pulse-dot { width: 7px; height: 7px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 8px var(--primary); animation: pulse 2s ease-in-out infinite; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 28px; position: relative; overflow: hidden; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
+.card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(123,47,255,0.6), transparent); }
+.card:hover { border-color: rgba(123,47,255,0.5); transform: translateY(-3px); box-shadow: 0 20px 60px rgba(123,47,255,0.12); }
+.card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.card h2 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 24px; letter-spacing: -0.3px; }
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+/* Form */
+.form-group { display: flex; flex-direction: column; gap: 12px; }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input-wrap label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+input[type="text"], input[type="number"] { width: 100%; padding: 12px 16px; background: var(--surface2); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+input[type="text"]:focus, input[type="number"]:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(123,47,255,0.15); }
+input::placeholder { color: var(--muted); font-size: 13px; }
+
+/* Submit Button */
+.btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--secondary), var(--primary)); border: none; border-radius: 12px; color: #060612; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; margin-top: 6px; }
+.btn-submit:hover { transform: scale(1.02); box-shadow: 0 8px 30px rgba(0,245,196,0.3),0 0 0 1px rgba(0,245,196,0.4); }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; padding: 10px 16px; text-align: left; }
+td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+tbody tr:hover td { background: rgba(123,47,255,0.06); }
+
+/* Animations */
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 8px var(--primary);}50%{opacity:0.4;box-shadow:0 0 4px var(--primary);} }
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<header>
+<div class="logo-group">
+<div class="logo-icon">⬡</div>
+<div>
+<div class="card-label">Analytics</div>
+<h1>Data<span>Pulse</span></h1>
+</div>
+</div>
+<div class="status-pill"><span class="pulse-dot"></span>LIVE FEED</div>
+</header>
+
+<div class="grid-2">
+<div class="card">
+<div class="card-label">Input</div>
+<h2>Add New Person</h2>
+<form id="personForm" class="form-group">
+<div class="input-row">
+<div class="input-wrap"><label>Name</label><input type="text" id="name" placeholder="Full name" required></div>
+<div class="input-wrap"><label>Age</label><input type="number" id="age" placeholder="Years" required></div>
+</div>
+<div class="input-row">
+<div class="input-wrap"><label>Gender</label><input type="text" id="gender" placeholder="Male / Female" required></div>
+<div class="input-wrap"><label>Place</label><input type="text" id="place" placeholder="City" required></div>
+</div>
+<button type="submit" class="btn-submit">⊕ Submit Record</button>
+</form>
+</div>
+
+<div class="card">
+<div class="card-label">Chart</div>
+<h2>Demographics</h2>
+<canvas id="genderChart"></canvas>
+</div>
+</div>
+
+<div class="card full" style="margin-bottom:24px;">
+<div class="card-label">Distribution</div>
+<h2>Age Breakdown</h2>
+<canvas id="ageChart"></canvas>
+</div>
+
+<div class="card full">
+<div class="card-label">Records</div>
+<h2>Live Data Feed</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Name</th><th>Age</th><th>Gender</th><th>Place</th></tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<script>
+const API_URL = 'http://192.168.1.254:3002/api/persons';
+let genderChart, ageChart;
+
+function genderBadge(g){
+    const lower=g.toLowerCase();
+    if(lower==='male'||lower==='m') return `<span class="badge badge-m">${g}</span>`;
+    if(lower==='female'||lower==='f') return `<span class="badge badge-f">${g}</span>`;
+    return `<span class="badge badge-o">${g}</span>`;
+}
+
+async function updateCharts(data){
+    const genders={};
+    data.forEach(p=>{
+        const k=p.gender.charAt(0).toUpperCase()+p.gender.slice(1).toLowerCase();
+        genders[k]=(genders[k]||0)+1;
+    });
+
+    if(genderChart) genderChart.destroy();
+    if(ageChart) ageChart.destroy();
+
+    genderChart=new Chart(document.getElementById('genderChart'),{
+        type:'doughnut',
+        data:{ labels:Object.keys(genders), datasets:[{ data:Object.values(genders), backgroundColor:['#00f5c4','#7b2fff','#ff3cac','#f59e0b'], borderColor:'#060612', borderWidth:3, hoverOffset:8 }] },
+        options:{ cutout:'68%', plugins:{legend:{position:'bottom', labels:{padding:20, usePointStyle:true, pointStyleWidth:10, font:{size:12}}}}, animation:{animateRotate:true,duration:800} }
+    });
+
+    ageChart=new Chart(document.getElementById('ageChart'),{
+        type:'bar',
+        data:{ labels:data.map(p=>p.name), datasets:[{ label:'Age', data:data.map(p=>p.age), backgroundColor:'rgba(123,47,255,0.8)', borderColor:'#7b2fff', borderWidth:1, borderRadius:7, borderSkipped:false }] },
+        options:{ plugins:{legend:{display:false}}, scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}}, y:{beginAtZero:true, grid:{color:'rgba(255,255,255,0.05)'}}}, animation:{duration:700,easing:'easeOutQuart'} }
+    });
+}
+
+async function loadList(){
+    try{
+        const res=await fetch(API_URL);
+        const data=await res.json();
+        const reversed=[...data].reverse();
+        if(reversed.length===0){
+            document.getElementById('tableBody').innerHTML=`<tr><td colspan="5" class="empty-state">// No records yet.</td></tr>`;
+        }else{
+            document.getElementById('tableBody').innerHTML=reversed.map((p,i)=>`
+                <tr>
+                    <td>${String(reversed.length-i).padStart(2,'0')}</td>
+                    <td>${p.name}</td>
+                    <td>${p.age}</td>
+                    <td>${genderBadge(p.gender)}</td>
+                    <td>${p.place}</td>
+                </tr>
+            `).join('');
+        }
+        updateCharts(data);
+    }catch(e){console.error(e);}
+}
+
+document.getElementById('personForm').onsubmit=async e=>{
+    e.preventDefault();
+    const payload={
+        name:document.getElementById('name').value,
+        age:parseInt(document.getElementById('age').value),
+        gender:document.getElementById('gender').value,
+        place:document.getElementById('place').value
+    };
+    await fetch(API_URL,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    document.getElementById('personForm').reset();
+    loadList();
+};
+
+loadList();
+setInterval(loadList,5000);
+</script>
+
+</body>
+</html>
